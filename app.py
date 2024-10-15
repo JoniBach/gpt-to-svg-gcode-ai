@@ -1,9 +1,8 @@
 from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.dalle_utils import generate_image_from_dalle
-from utils.conversion_prep_utils import preprocess_image_to_black_and_white
+from utils.converter_utils import convert_png_to_svg
 import requests
 import os
-
 
 def get_next_filename(directory: str, base_name: str, extension: str) -> str:
     """
@@ -47,35 +46,27 @@ if __name__ == "__main__":
 
     if image_url:
         try:
-            # Ensure the 'static/generated' and 'static/prepared' directories exist
-            generated_dir = "static/generated"
-            prepared_dir = "static/prepared"
-            if not os.path.exists(generated_dir):
-                os.makedirs(generated_dir)
-            if not os.path.exists(prepared_dir):
-                os.makedirs(prepared_dir)
+            # Ensure the 'static' directory exists
+            directory = "static/generated"
+            if not os.path.exists(directory):
+                os.makedirs(directory)
 
-            # Get the next available filename for the original image
-            generated_filename = get_next_filename(generated_dir, "generated_image", ".png")
+            # Get the next available filename
+            filename = get_next_filename(directory, "generated_image", ".png")
 
-            # Download and save the original image
+            # Download and save the image
             img_data = requests.get(image_url).content
-            with open(generated_filename, "wb") as handler:
+            with open(filename, "wb") as handler:
                 handler.write(img_data)
-            print(f"Original image saved as {generated_filename}")
-            
-            # Preprocess the image to ensure it's pure black and white
-            bw_image = preprocess_image_to_black_and_white(image_url)
-            
-            # Get the next available filename for the processed image
-            prepared_filename = get_next_filename(prepared_dir, "prepared_image", ".png")
+            print(f"Image saved as {filename}")
 
-            # Save the processed image
-            if bw_image:
-                bw_image.save(prepared_filename)
-                print(f"Processed image saved as {prepared_filename}")
+            # Convert the image to SVG
+            svg_url = convert_png_to_svg(filename)
+            if svg_url:
+                print(f"SVG Conversion Successful! Download SVG from: {svg_url}")
             else:
-                print("Failed to process the image to black and white.")
+                print("SVG conversion failed.")
+
         except requests.exceptions.RequestException as e:
             print(f"Failed to download the image: {e}")
     else:

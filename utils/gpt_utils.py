@@ -30,7 +30,7 @@ def generate_prompt_from_chatgpt(prompt: str) -> str:
                  "You are a creative assistant that specializes in generating simple, clean, and easy-to-draw descriptions for visual art"
                  "you recieve a prmpt and return a concept that can be drawn by dall-e"
                  "Return clear, straightforward descriptions that can guide image generation tools to produce simple, minimalistic artwork"
-                 "Make sure the prompts avoid unnecessary details and focus on basic shapes, lines, and forms. The goal is to create drawable images that are not overly complex, ensuring they can be easily sketched or drawn. do not give implamentation advice such as shading etc"
+                 "Make sure the prompts avoid unnecessary details, references to color or implamentations. and focus on basic shapes, lines, and forms. The goal is to create drawable images that are not overly complex, ensuring they can be easily sketched or drawn. do not give implamentation advice such as shading etc"
                    )},
                 {"role": "user", "content": prompt}
             ]
