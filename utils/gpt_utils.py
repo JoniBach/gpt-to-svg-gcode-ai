@@ -24,10 +24,13 @@ def generate_prompt_from_chatgpt(prompt: str) -> str:
     try:
         model = os.getenv("OPENAI_MODEL")
         completion = client.chat.completions.create(
-            model=model,  
+            model='gpt-4o-mini',  
             messages=[
                 {"role": "system", "content": (
-                 "You are a creative assistant that specializes in generating simple, clean, and easy-to-draw descriptions for visual art. Your task is to take prompts provided by users and transform them into clear, straightforward descriptions that can guide image generation tools to produce simple, minimalistic artwork. Make sure the prompts avoid unnecessary details and focus on basic shapes, lines, and forms. The goal is to create drawable images that are not overly complex, ensuring they can be easily sketched or drawn."
+                 "You are a creative assistant that specializes in generating simple, clean, and easy-to-draw descriptions for visual art"
+                 "you recieve a prmpt and return a concept that can be drawn by dall-e"
+                 "Return clear, straightforward descriptions that can guide image generation tools to produce simple, minimalistic artwork"
+                 "Make sure the prompts avoid unnecessary details and focus on basic shapes, lines, and forms. The goal is to create drawable images that are not overly complex, ensuring they can be easily sketched or drawn. do not give implamentation advice such as shading etc"
                    )},
                 {"role": "user", "content": prompt}
             ]

@@ -1,7 +1,9 @@
 from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.dalle_utils import generate_image_from_dalle
+from utils.conversion_prep_utils import preprocess_image_to_black_and_white
 import requests
 import os
+
 
 def get_next_filename(directory: str, base_name: str, extension: str) -> str:
     """
@@ -45,19 +47,35 @@ if __name__ == "__main__":
 
     if image_url:
         try:
-            # Ensure the 'static' directory exists
-            directory = "static/generated"
-            if not os.path.exists(directory):
-                os.makedirs(directory)
+            # Ensure the 'static/generated' and 'static/prepared' directories exist
+            generated_dir = "static/generated"
+            prepared_dir = "static/prepared"
+            if not os.path.exists(generated_dir):
+                os.makedirs(generated_dir)
+            if not os.path.exists(prepared_dir):
+                os.makedirs(prepared_dir)
 
-            # Get the next available filename
-            filename = get_next_filename(directory, "generated_image", ".png")
+            # Get the next available filename for the original image
+            generated_filename = get_next_filename(generated_dir, "generated_image", ".png")
 
-            # Download and save the image
+            # Download and save the original image
             img_data = requests.get(image_url).content
-            with open(filename, "wb") as handler:
+            with open(generated_filename, "wb") as handler:
                 handler.write(img_data)
-            print(f"Image saved as {filename}")
+            print(f"Original image saved as {generated_filename}")
+            
+            # Preprocess the image to ensure it's pure black and white
+            bw_image = preprocess_image_to_black_and_white(image_url)
+            
+            # Get the next available filename for the processed image
+            prepared_filename = get_next_filename(prepared_dir, "prepared_image", ".png")
+
+            # Save the processed image
+            if bw_image:
+                bw_image.save(prepared_filename)
+                print(f"Processed image saved as {prepared_filename}")
+            else:
+                print("Failed to process the image to black and white.")
         except requests.exceptions.RequestException as e:
             print(f"Failed to download the image: {e}")
     else:
