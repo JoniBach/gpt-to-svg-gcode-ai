@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.app_utils import generate_and_save_image, convert_image_to_svg, convert_svg_to_gcode, sanitize_folder_name
+from utils.compression_utils import compress_png_thumbnail
 import os
 
 # Create the FastAPI app instance
@@ -55,36 +56,47 @@ async def generate_image(request: ImageRequest):
         if not image_path:
             raise HTTPException(status_code=500, detail="Failed to generate and save image.")
 
-        # Step 3: Convert the image to SVG
+        # Step 3: Create a thumbnail of the image
+        thumbnail_path = compress_png_thumbnail(image_path, output_path=os.path.join(output_folder, "thumbnail.png"))
+        if not thumbnail_path:
+            raise HTTPException(status_code=500, detail="Thumbnail generation failed.")
+
+        # Step 4: Convert the image to SVG
         svg_path = convert_image_to_svg(image_path, output_folder)
         if not svg_path:
             raise HTTPException(status_code=500, detail="SVG conversion failed.")
 
-        # Step 4: Convert the SVG to G-code
+        # Step 5: Convert the SVG to G-code
         gcode_path = convert_svg_to_gcode(svg_path, output_folder)
         if not gcode_path:
             raise HTTPException(status_code=500, detail="G-code conversion failed.")
         
-        # Step 5: Create a ZIP file containing all generated files
+        # Step 6: Create a ZIP file containing all generated files
         zip_path = os.path.join(output_folder, sanitize_folder_name(user_input) + ".zip")
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(image_path, arcname=os.path.basename(image_path))
             zipf.write(svg_path, arcname=os.path.basename(svg_path))
             zipf.write(gcode_path, arcname=os.path.basename(gcode_path))
+            zipf.write(thumbnail_path, arcname=os.path.basename(thumbnail_path))
 
         logger.info("=== Image Generation Workflow Completed ===")
 
         # Generate download URLs
-        base_url = os.getenv("BASE_URL") + '/download'
-        image_download_url = f"{base_url}?filepath={os.path.relpath(image_path, base_folder).replace(os.sep, '/')}"
-        svg_download_url = f"{base_url}?filepath={os.path.relpath(svg_path, base_folder).replace(os.sep, '/')}"
-        gcode_download_url = f"{base_url}?filepath={os.path.relpath(gcode_path, base_folder).replace(os.sep, '/')}"
-        zip_download_url = f"{base_url}?filepath={os.path.relpath(zip_path, base_folder).replace(os.sep, '/')}"
+        base_url = os.getenv("BASE_URL") 
+        download_url = os.getenv("BASE_URL") + '/download'
+        image_download_url = f"{download_url}?filepath={os.path.relpath(image_path, base_folder).replace(os.sep, '/')}"
+        thumbnail_download_url = f"{download_url}?filepath={os.path.relpath(thumbnail_path, base_folder).replace(os.sep, '/')}"
+        thumbnail = f"{base_url}/static/{os.path.relpath(thumbnail_path, base_folder).replace(os.sep, '/')}"
+        svg_download_url = f"{download_url}?filepath={os.path.relpath(svg_path, base_folder).replace(os.sep, '/')}"
+        gcode_download_url = f"{download_url}?filepath={os.path.relpath(gcode_path, base_folder).replace(os.sep, '/')}"
+        zip_download_url = f"{download_url}?filepath={os.path.relpath(zip_path, base_folder).replace(os.sep, '/')}"
 
         return {
             "message": "Image Generation Successful!",
             "prompt": generated_prompt,
             "image_download_url": image_download_url,
+            "thumbnail_download_url": thumbnail_download_url,
+            "thumbnail": thumbnail,
             "svg_download_url": svg_download_url,
             "gcode_download_url": gcode_download_url,
             "zip_download_url": zip_download_url

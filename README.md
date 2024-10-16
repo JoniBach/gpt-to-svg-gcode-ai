@@ -78,7 +78,7 @@ By automating the conversion of graphical concepts into G-code, this project str
 5. **Ensure Required Directories Exist**:
     - Make sure the following directories are present:
         - `tmp/staticgenerated`: For storing generated PNG images.
-        - `tmp/staticconverted`: For storing SVG files.
+        - `tmp/static/converted`: For storing SVG files.
         - `tmp/staticgcode`: For storing G-code files.
 
 ## Usage
@@ -94,7 +94,7 @@ By automating the conversion of graphical concepts into G-code, this project str
 
 3. **Access Your Files**:
     - **Generated PNGs**: Stored in `tmp/staticgenerated`.
-    - **Converted SVGs**: Stored in `tmp/staticconverted`.
+    - **Converted SVGs**: Stored in `tmp/static/converted`.
     - **Generated G-code**: Stored in `tmp/staticgcode`.
 
 ## Project Workflow
@@ -119,7 +119,7 @@ By automating the conversion of graphical concepts into G-code, this project str
   - `converter_utils.py`: Handles PNG to SVG conversion.
   - `svg_to_gcode.py`: Handles SVG to G-code conversion.
 - **tmp/staticgenerated/**: Stores generated PNG images.
-- **tmp/staticconverted/**: Stores SVG files.
+- **tmp/static/converted/**: Stores SVG files.
 - **tmp/staticgcode/**: Stores G-code files.
 
 ## Contributing
