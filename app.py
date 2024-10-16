@@ -1,12 +1,18 @@
+import zipfile
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.app_utils import generate_and_save_image, convert_image_to_svg, convert_svg_to_gcode
-from fastapi.middleware.cors import CORSMiddleware
-
+import os
 
 # Create the FastAPI app instance
 app = FastAPI()
+
+# Serve static files from the "static" directory
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Define the input model for the API request
 class ImageRequest(BaseModel):
@@ -44,20 +50,51 @@ async def generate_image(request: ImageRequest):
         if not gcode_path:
             raise HTTPException(status_code=500, detail="G-code conversion failed.")
         
+        # Step 5: Create a ZIP file containing all generated files
+        zip_path = os.path.join(output_folder, "generated_files.zip")
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            zipf.write(image_path, arcname=os.path.basename(image_path))
+            zipf.write(svg_path, arcname=os.path.basename(svg_path))
+            zipf.write(gcode_path, arcname=os.path.basename(gcode_path))
+
         print("=== Image Generation Workflow Completed ===")
+
+        # Generate download URLs
+        base_url = "http://localhost:8000/download"
+        image_download_url = f"{base_url}?filepath={os.path.relpath(image_path, base_folder).replace(os.sep, '/')}"
+        svg_download_url = f"{base_url}?filepath={os.path.relpath(svg_path, base_folder).replace(os.sep, '/')}"
+        gcode_download_url = f"{base_url}?filepath={os.path.relpath(gcode_path, base_folder).replace(os.sep, '/')}"
+        zip_download_url = f"{base_url}?filepath={os.path.relpath(zip_path, base_folder).replace(os.sep, '/')}"
 
         return {
             "message": "Image Generation Successful!",
             "prompt": generated_prompt,
             "generated_prompt": generated_prompt,
-            "folder_path": output_folder,
-            "image_path": image_path,
-            "svg_path": svg_path,
-            "gcode_path": gcode_path
+            "image_download_url": image_download_url,
+            "svg_download_url": svg_download_url,
+            "gcode_download_url": gcode_download_url,
+            "zip_download_url": zip_download_url
         }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"An error occurred: {str(e)}")
+
+@app.get("/download")
+async def download_file(filepath: str):
+    """
+    Endpoint to download a file with a given filepath.
+    """
+    full_path = os.path.join("static", filepath)
+
+    if not os.path.exists(full_path):
+        raise HTTPException(status_code=404, detail="File not found")
+
+    # Using FileResponse to send the file with a header that forces a download
+    return FileResponse(
+        full_path, 
+        media_type="application/octet-stream", 
+        filename=os.path.basename(full_path)
+    )
 
 @app.get("/")
 def read_root():
