@@ -1,81 +1,125 @@
+import re
+import os
 from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.dalle_utils import generate_image_from_dalle
 from utils.converter_utils import convert_png_to_svg
 from utils.svg_to_gcode_utils import svg_to_gcode
+from utils.filename_utils import get_next_folder_name
 import requests
-import os
 
-def get_next_filename(directory: str, base_name: str, extension: str) -> str:
+def ensure_directory_exists(directory):
+    """Ensure that the required directory exists."""
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
+def sanitize_folder_name(name: str, max_length: int = 20) -> str:
     """
-    Determines the next available incremented filename in the specified directory.
+    Sanitizes the folder name by replacing spaces with underscores, 
+    removing special characters, and truncating to a max length.
     
     Args:
-        directory (str): The directory where files are saved.
-        base_name (str): The base name for the files.
-        extension (str): The file extension (e.g., '.png').
+        name (str): The original name.
+        max_length (int): The maximum length of the folder name.
     
     Returns:
-        str: The next available filename (e.g., 'generated_image_1.png').
+        str: The sanitized folder name.
     """
-    # Get all files in the directory that match the base name and extension
-    existing_files = [
-        f for f in os.listdir(directory) 
-        if f.startswith(base_name) and f.endswith(extension)
-    ]
+    # Replace spaces with underscores
+    name = name.replace(" ", "_")
+    
+    # Remove any special characters except underscores
+    name = re.sub(r'[^a-zA-Z0-9_]', '', name)
+    
+    # Truncate to the specified maximum length
+    return name[:max_length]
 
-    # Extract numbers from existing filenames and find the highest
-    highest_number = 0
-    for filename in existing_files:
-        try:
-            number = int(filename.replace(base_name, "").replace(extension, "").strip("_"))
-            highest_number = max(highest_number, number)
-        except ValueError:
-            continue
+def download_image(image_url, save_path):
+    """Download an image from the given URL and save it to the specified path."""
+    print("Starting image download...")
+    try:
+        img_data = requests.get(image_url).content
+        with open(save_path, "wb") as handler:
+            handler.write(img_data)
+        print(f"Image saved as {save_path}")
+        print("Image download completed.")
+        return True
+    except requests.exceptions.RequestException as e:
+        print(f"Failed to download the image: {e}")
+        return False
 
-    # Increment the highest number found
-    next_number = highest_number + 1
-    return os.path.join(directory, f"{base_name}_{next_number}{extension}")
+def generate_and_save_image(prompt, base_folder, user_input):
+    """Generate an image using DALL-E and save it to a file within a new directory."""
+    print("Generating image from prompt...")
+    image_url = generate_image_from_dalle(prompt)
+    if not image_url:
+        print("Failed to generate image from DALL-E.")
+        return None, None
 
-if __name__ == "__main__":
+    # Sanitize and generate the folder name
+    sanitized_name = sanitize_folder_name(user_input)
+    folder_name = get_next_folder_name(base_folder, sanitized_name)
+    ensure_directory_exists(folder_name)
+    
+    image_filename = os.path.join(folder_name, "generated.png")
+    if download_image(image_url, image_filename):
+        print("Image generation and saving completed.")
+        return folder_name, image_filename
+    return None, None
+
+def convert_image_to_svg(image_path, output_folder):
+    """Convert a PNG image to SVG format and save it in the same folder."""
+    print("Starting SVG conversion...")
+    svg_path = os.path.join(output_folder, "generated.svg")
+    converted_svg_path = convert_png_to_svg(image_path)
+    if converted_svg_path:
+        os.rename(converted_svg_path, svg_path)
+        print(f"SVG Conversion Successful! Saved as: {svg_path}")
+        print("SVG conversion completed.")
+        return svg_path
+    else:
+        print("SVG conversion failed.")
+        return None
+
+def convert_svg_to_gcode(svg_path, output_folder):
+    """Convert an SVG file to G-code and save it in the same folder."""
+    print("Starting G-code conversion...")
+    gcode_path = os.path.join(output_folder, "generated.gcode")
+    converted_gcode_path = svg_to_gcode(svg_path)
+    if converted_gcode_path:
+        os.rename(converted_gcode_path, gcode_path)
+        print(f"G-code Conversion Successful! Saved as: {gcode_path}")
+        print("G-code conversion completed.")
+        return gcode_path
+    else:
+        print("G-code conversion failed.")
+        return None
+
+def main():
+    print("=== Image Generation Workflow Started ===")
     user_input = input("Enter a concept or theme for an image: ")
+    
+    print("Generating image prompt from user input...")
     generated_prompt = generate_prompt_from_chatgpt(user_input)
     print("Generated Image Prompt: ", generated_prompt)
+    print("Image prompt generation completed.")
+
+    # Base directory to store all generated image folders
+    base_folder = "static"
+
+    # Generate and save the image
+    output_folder, image_path = generate_and_save_image(generated_prompt, base_folder, user_input)
+    if not image_path:
+        return
+
+    # Convert the image to SVG
+    svg_path = convert_image_to_svg(image_path, output_folder)
+    if not svg_path:
+        return
+
+    # Convert the SVG to G-code
+    convert_svg_to_gcode(svg_path, output_folder)
     
-    # Generate the image using DALL-E
-    image_url = generate_image_from_dalle(generated_prompt)
-    print("Image URL: ", image_url)
+    print("=== Image Generation Workflow Completed ===")
 
-    if image_url:
-        try:
-            # Ensure the 'static' directory exists
-            directory = "static/generated"
-            if not os.path.exists(directory):
-                os.makedirs(directory)
-
-            # Get the next available filename
-            filename = get_next_filename(directory, "generated_image", ".png")
-
-            # Download and save the image
-            img_data = requests.get(image_url).content
-            with open(filename, "wb") as handler:
-                handler.write(img_data)
-            print(f"Image saved as {filename}")
-
-            # Convert the image to SVG
-            svg_path = convert_png_to_svg(filename)
-            if svg_path:
-                print(f"SVG Conversion Successful! Saved as: {svg_path}")
-
-                # Convert the SVG to G-code
-                gcode_path = svg_to_gcode(svg_path)
-                if gcode_path:
-                    print(f"G-code Conversion Successful! Saved as: {gcode_path}")
-                else:
-                    print("G-code conversion failed.")
-            else:
-                print("SVG conversion failed.")
-
-        except requests.exceptions.RequestException as e:
-            print(f"Failed to download the image: {e}")
-    else:
-        print("Failed to generate an image.")
+if __name__ == "__main__":
+    main()

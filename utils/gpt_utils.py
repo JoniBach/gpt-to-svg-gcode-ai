@@ -39,3 +39,4 @@ def generate_prompt_from_chatgpt(prompt: str) -> str:
     except Exception as e:
         print(f"Error generating prompt: {e}")
         return "A beautiful and vivid scene, inspired by your input, could not be generated."
+
