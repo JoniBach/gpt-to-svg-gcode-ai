@@ -1,6 +1,7 @@
 from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.dalle_utils import generate_image_from_dalle
 from utils.converter_utils import convert_png_to_svg
+from utils.svg_to_gcode_utils import svg_to_gcode
 import requests
 import os
 
@@ -61,9 +62,16 @@ if __name__ == "__main__":
             print(f"Image saved as {filename}")
 
             # Convert the image to SVG
-            svg_url = convert_png_to_svg(filename)
-            if svg_url:
-                print(f"SVG Conversion Successful! Download SVG from: {svg_url}")
+            svg_path = convert_png_to_svg(filename)
+            if svg_path:
+                print(f"SVG Conversion Successful! Saved as: {svg_path}")
+
+                # Convert the SVG to G-code
+                gcode_path = svg_to_gcode(svg_path)
+                if gcode_path:
+                    print(f"G-code Conversion Successful! Saved as: {gcode_path}")
+                else:
+                    print("G-code conversion failed.")
             else:
                 print("SVG conversion failed.")
 
