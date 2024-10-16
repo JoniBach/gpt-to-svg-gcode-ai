@@ -15,11 +15,10 @@ app = FastAPI()
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Load API key from environment variables
-API_KEY = os.getenv("API_KEY")
-
 # Dependency to check API Key
 async def verify_api_key(x_api_key: str = Header(...)):
-    if x_api_key != API_KEY:
+    api_key = os.getenv("API_KEY")
+    if x_api_key != api_key:
         raise HTTPException(status_code=403, detail="Invalid API Key")
 
 # Define the input model for the API request
