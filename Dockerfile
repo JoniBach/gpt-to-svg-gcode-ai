@@ -11,5 +11,5 @@ COPY . /app
 RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Set the entry point to run your script
-CMD ["python", "app.py"]
+# Set an entry point script for running the server
+CMD ["python", "-c", "print('Visit your API at http://localhost:8000'); import uvicorn; uvicorn.run('app:app', host='0.0.0.0', port=8000)"]
