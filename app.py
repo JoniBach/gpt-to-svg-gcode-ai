@@ -5,7 +5,8 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from utils.gpt_utils import generate_prompt_from_chatgpt
-from utils.app_utils import generate_and_save_image, convert_image_to_svg, convert_svg_to_gcode
+from utils.app_utils import generate_and_save_image, convert_image_to_svg, convert_svg_to_gcode, sanitize_folder_name
+
 import os
 
 # Create the FastAPI app instance
@@ -51,7 +52,7 @@ async def generate_image(request: ImageRequest):
             raise HTTPException(status_code=500, detail="G-code conversion failed.")
         
         # Step 5: Create a ZIP file containing all generated files
-        zip_path = os.path.join(output_folder, "generated_files.zip")
+        zip_path = os.path.join(output_folder, sanitize_folder_name(user_input)+ ".zip")
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(image_path, arcname=os.path.basename(image_path))
             zipf.write(svg_path, arcname=os.path.basename(svg_path))
@@ -60,7 +61,7 @@ async def generate_image(request: ImageRequest):
         print("=== Image Generation Workflow Completed ===")
 
         # Generate download URLs
-        base_url = "http://localhost:8000/download"
+        base_url = os.getenv("BASE_URL") + '/download'
         image_download_url = f"{base_url}?filepath={os.path.relpath(image_path, base_folder).replace(os.sep, '/')}"
         svg_download_url = f"{base_url}?filepath={os.path.relpath(svg_path, base_folder).replace(os.sep, '/')}"
         gcode_download_url = f"{base_url}?filepath={os.path.relpath(gcode_path, base_folder).replace(os.sep, '/')}"

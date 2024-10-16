@@ -6,8 +6,6 @@ import time
 # Load environment variables
 load_dotenv()
 
-CONVERTIO_API_KEY = os.getenv("CONVERTIO_API_KEY")
-
 def convert_png_to_svg(file_path: str) -> str:
     """
     Converts a PNG file to SVG using the Convertio API.
@@ -23,10 +21,11 @@ def convert_png_to_svg(file_path: str) -> str:
         file_name = os.path.basename(file_path)
         base_name = os.path.splitext(file_name)[0]  # Remove extension
         api_key = os.getenv("CONVERTIO_API_KEY")
+        url = os.getenv("CONVERTIO_URL")
 
         # Step 1: Initiate the conversion request (correctly formatted as JSON)
         response = requests.post(
-            "https://api.convertio.co/convert",
+            url,
             json={  # Use json parameter instead of data
                 "apikey": api_key,
                 "input": "upload",
@@ -40,7 +39,7 @@ def convert_png_to_svg(file_path: str) -> str:
         # Check if the request was successful
         if response.status_code == 200 and response.json().get("status") == "ok":
             conversion_id = response.json()["data"]["id"]
-            upload_url = f"https://api.convertio.co/convert/{conversion_id}/{file_name}"
+            upload_url = f"{url}/{conversion_id}/{file_name}"
             
             # Step 2: Upload the file
             with open(file_path, "rb") as file_data:
@@ -58,7 +57,7 @@ def convert_png_to_svg(file_path: str) -> str:
                 return None
 
             # Step 3: Check conversion status
-            status_url = f"https://api.convertio.co/convert/{conversion_id}/status"
+            status_url = f"{url}/{conversion_id}/status"
             while True:
                 status_response = requests.get(status_url)
                 print("Status Response:", status_response.text)  # Debugging
