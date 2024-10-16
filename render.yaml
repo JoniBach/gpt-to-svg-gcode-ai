@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: gpt-to-svg-gcode-ai
+    env: docker
+    plan: free
+    branch: main
+    region: oregon
+    dockerfilePath: Dockerfile
+    buildCommand: "docker build -t my-python-app ."
+    startCommand: "uvicorn app:app --host 0.0.0.0 --port 8000"
+    envVars:
+      - key: CONVERTIO_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+    autoDeploy: true
+    healthCheckPath: "/"
+    disk:
+      sizeGB: 3
