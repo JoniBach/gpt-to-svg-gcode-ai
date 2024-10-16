@@ -32,8 +32,13 @@ COPY . /app
 # Set the environment variable to include dependencies in PYTHONPATH
 ENV PYTHONPATH /app/dependencies
 
+# Create the necessary directory for static files
+RUN mkdir -p /app/tmp/static
+
+# Set permissions for the non-root user
+RUN adduser --disabled-password --gecos '' appuser && chown -R appuser:appuser /app/tmp
+
 # Create a non-root user to run the container
-RUN adduser --disabled-password --gecos '' appuser
 USER appuser
 
 # Set the entry point for the container

@@ -6,7 +6,6 @@ services:
     branch: main
     region: oregon
     dockerfilePath: Dockerfile
-    buildCommand: "docker build -t my-python-app ."
     autoDeploy: true
     healthCheckPath: "/"
     envVars:
@@ -24,4 +23,4 @@ services:
         sync: false
       - key: API_KEY
         sync: false
-      
+

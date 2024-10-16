@@ -67,7 +67,7 @@ def convert_png_to_svg(file_path: str) -> str:
                         svg_url = status_data["output"]["url"]
 
                         # Step 4: Download the SVG file and save locally
-                        save_directory = "static/converted"
+                        save_directory = "tmp/staticconverted"
                         if not os.path.exists(save_directory):
                             os.makedirs(save_directory)
 

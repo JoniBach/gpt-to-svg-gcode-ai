@@ -1,7 +1,7 @@
 from svgpathtools import svg2paths
 import os
 
-def svg_to_gcode(svg_file_path: str, output_directory: str = "static/gcode") -> str:
+def svg_to_gcode(svg_file_path: str, output_directory: str = "tmp/staticgcode") -> str:
     """
     Converts an SVG file to G-code and saves it to the specified directory.
 
