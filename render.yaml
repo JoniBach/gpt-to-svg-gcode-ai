@@ -10,7 +10,16 @@ services:
     autoDeploy: true
     healthCheckPath: "/"
     envVars:
-      - key: CONVERTIO_API_KEY
-        sync: false
       - key: OPENAI_API_KEY
         sync: false
+      - key: OPENAI_ORGANIZATION
+        sync: false
+      - key: OPENAI_PROJECT
+        sync: false
+      - key: CONVERTIO_API_KEY
+        sync: false
+      - key: BASE_URL
+        sync: false
+      - key: CONVERTIO_URL
+        sync: false
+      
