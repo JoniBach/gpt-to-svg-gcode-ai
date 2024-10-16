@@ -1,5 +1,6 @@
 import zipfile
 import logging
+import uuid
 from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
@@ -48,11 +49,15 @@ async def generate_image(request: ImageRequest):
         # Base directory to store generated assets
         base_folder = "tmp/static"
         
-        # Create the base directory if it doesn't exist
-        os.makedirs(base_folder, exist_ok=True)
+        # Create a unique folder name using UUID
+        unique_folder_name = str(uuid.uuid4())
+        output_folder = os.path.join(base_folder, unique_folder_name)
+
+        # Create the unique output folder if it doesn't exist
+        os.makedirs(output_folder, exist_ok=True)
 
         # Step 2: Generate and save the image
-        output_folder, image_path = generate_and_save_image(generated_prompt, base_folder, user_input)
+        _, image_path = generate_and_save_image(generated_prompt, output_folder, user_input)
         if not image_path:
             raise HTTPException(status_code=500, detail="Failed to generate and save image.")
 
@@ -72,7 +77,8 @@ async def generate_image(request: ImageRequest):
             raise HTTPException(status_code=500, detail="G-code conversion failed.")
         
         # Step 6: Create a ZIP file containing all generated files
-        zip_path = os.path.join(output_folder, sanitize_folder_name(user_input) + ".zip")
+        zip_name = sanitize_folder_name(user_input) + ".zip"  # Use user's input to name the zip file
+        zip_path = os.path.join(output_folder, zip_name)
         with zipfile.ZipFile(zip_path, 'w') as zipf:
             zipf.write(image_path, arcname=os.path.basename(image_path))
             zipf.write(svg_path, arcname=os.path.basename(svg_path))
@@ -82,8 +88,8 @@ async def generate_image(request: ImageRequest):
         logger.info("=== Image Generation Workflow Completed ===")
 
         # Generate download URLs
-        base_url = os.getenv("BASE_URL") 
-        download_url = os.getenv("BASE_URL") + '/download'
+        base_url = os.getenv("BASE_URL")
+        download_url = f"{base_url}/download"
         image_download_url = f"{download_url}?filepath={os.path.relpath(image_path, base_folder).replace(os.sep, '/')}"
         thumbnail_download_url = f"{download_url}?filepath={os.path.relpath(thumbnail_path, base_folder).replace(os.sep, '/')}"
         thumbnail = f"{base_url}/static/{os.path.relpath(thumbnail_path, base_folder).replace(os.sep, '/')}"
@@ -116,11 +122,14 @@ async def download_file(filepath: str):
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="File not found")
 
+    # Extract the filename from the path and use it in the response
+    filename = os.path.basename(full_path)
+
     # Using FileResponse to send the file with a header that forces a download
     return FileResponse(
         full_path, 
         media_type="application/octet-stream", 
-        filename=os.path.basename(full_path)
+        filename=filename  # Sets the default download filename to match user's concept input
     )
 
 @app.get("/")
