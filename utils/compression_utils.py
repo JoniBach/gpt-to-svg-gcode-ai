@@ -1,7 +1,7 @@
 from PIL import Image
 import os
 
-def compress_png_basic(input_path: str, output_path: str = None, quality: int = 25) -> str:
+def compress_png_basic(input_path: str, output_path: str = None, quality: int = 50) -> str:
     """
     Compress a PNG image by reducing its quality using Pillow.
     
