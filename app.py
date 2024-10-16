@@ -1,12 +1,11 @@
 import zipfile
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.app_utils import generate_and_save_image, convert_image_to_svg, convert_svg_to_gcode, sanitize_folder_name
-
 import os
 
 # Create the FastAPI app instance
@@ -15,11 +14,19 @@ app = FastAPI()
 # Serve static files from the "static" directory
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
+# Load API key from environment variables
+API_KEY = os.getenv("API_KEY")
+
+# Dependency to check API Key
+async def verify_api_key(x_api_key: str = Header(...)):
+    if x_api_key != API_KEY:
+        raise HTTPException(status_code=403, detail="Invalid API Key")
+
 # Define the input model for the API request
 class ImageRequest(BaseModel):
     concept: str
 
-@app.post("/generate")
+@app.post("/generate", dependencies=[Depends(verify_api_key)])
 async def generate_image(request: ImageRequest):
     """
     Endpoint to generate an image based on the user's concept.
