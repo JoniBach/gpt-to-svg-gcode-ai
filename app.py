@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "https://gpt-to-svg-gcode-ai.onrender.com"],  # Allow localhost and your deployed frontend
+    allow_origins=["http://localhost:5173", "https://gpt-to-svg-demo.vercel.app/", "https://gpt-to-svg-gcode-ai.onrender.com"],  # Allow localhost and your deployed frontend
     allow_credentials=True,
     allow_methods=["*"],  # Allow all HTTP methods
     allow_headers=["*"],  # Allow all headers
