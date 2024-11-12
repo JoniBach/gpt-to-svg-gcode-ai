@@ -10,6 +10,7 @@ from utils.gpt_utils import generate_prompt_from_chatgpt
 from utils.app_utils import generate_and_save_image, convert_image_to_svg, convert_svg_to_gcode, sanitize_folder_name
 from utils.compression_utils import compress_png_thumbnail
 import os
+from fastapi import status
 
 # Create the FastAPI app instance
 app = FastAPI()
@@ -139,6 +140,13 @@ async def download_file(filepath: str):
         media_type="application/octet-stream", 
         filename=filename  # Sets the default download filename to match user's concept input
     )
+
+@app.get("/ping", status_code=status.HTTP_200_OK)
+def ping():
+    """
+    Health check endpoint to keep the server active.
+    """
+    return {"message": "Server is awake and running!"}
 
 @app.get("/")
 def read_root():
