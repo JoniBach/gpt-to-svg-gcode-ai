@@ -27,7 +27,7 @@ def generate_image_from_dalle(prompt: str):
             prompt = prompt[:800]
         
         response = client.images.generate(
-            prompt= 'make me a medium to low complexity line drawing of' + prompt + ' the output should be clean, 2 dimensional fine line drawings with medium to low complexity. the lines should be pure black. the background solid white with empty space. ',
+            prompt= 'make me a medium to low complexity line drawing of' + prompt + ' the output should be clean, 2 dimensional drawings with medium to low complexity. the lines should be pure black. the background solid white with empty space. ',
             model="dall-e-3",
             # size="256x256",  # Increased size for better quality
             quality="standard",    # Assuming 'high' is supported (check OpenAI docs for exact parameter usage)
